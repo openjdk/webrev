@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=25.1-hg+openjdk.java.net
+WEBREV_UPDATED=25.2-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1941,20 +1941,23 @@ if [[ $SCM_MODE == "mercurial" ]]; then
             fi
         else
             #
-            # Unfortunately mercurial is bugged and doesn't handle
+            # Unfortunately mercurial is bugged (in some unknown version) and may not handle
             # aliases correctly in 'hg path default'
             # So let's do it ourselves. Sigh...
+            # Be warned that we don't support hgrc containing definitions spanning multiple lines.
             if [[ -z "$OUTPWS" ]]; then
-                OUTPWS=`grep default-push $CWS/.hg/hgrc | $AWK '{print $3}' | $FILTER`
+                OUTPWS=`sed -n -e '/^\[paths\]/,/^default-push/s/^default-push[ \t]*=[ \t]*\(.*\)$/\1/p' .hg/hgrc | $FILTER`
             fi
             # Still empty, means no default-push
             if [[ -z "$OUTPWS" ]]; then
-                OUTPWS=`grep 'default =' $CWS/.hg/hgrc | $AWK '{print $3}' | $FILTER`
+                OUTPWS=`sed -n -e '/^\[paths\]/,/^default/s/^default[ \t]*=[ \t]*\(.*\)$/\1/p' .hg/hgrc | $FILTER`
             fi
             # Let's try to expand it if it's an alias defined in [paths]
-            tmp=`hg path $OUTPWS 2>/dev/null | $FILTER`
-            if [[ -n $tmp ]]; then
-                OUTPWS="$tmp"
+            if [[ -n "$OUTPWS" ]]; then
+                tmp=`hg path $OUTPWS 2>/dev/null | $FILTER`
+                if [[ -n $tmp ]]; then
+                    OUTPWS="$tmp"
+                fi
             fi
         fi
     fi
