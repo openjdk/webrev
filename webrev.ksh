@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=25.3-hg+openjdk.java.net
+WEBREV_UPDATED=25.4-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1250,12 +1250,14 @@ function difflines
 
 function outgoing_from_mercurial_forest
 {
-    hg foutgoing --template 'rev: {rev}\n' $OUTPWS | $FILTER | $AWK '
+    hgroot=`hg root | $FILTER`
+    hg toutgoing --template 'rev: {rev}\n' $OUTPWS | $FILTER | $AWK -v "hgroot=$hgroot" '
         BEGIN           {ntree=0}
         /^comparing/    {next}
         /^no changes/   {next}
         /^searching/    {next}
-	/^\[.*\]$/	{tree=substr($1,2,length($1)-2);
+	/^\[.*\]:$/	{tree=substr($1,length(hgroot)+3); tree=substr(tree,0,length(tree)-2);
+                         if (tree == "") { tree="."; }
                          trees[ntree++] = tree;
                          revs[tree]=-1;
                          next}
@@ -1283,14 +1285,14 @@ function flist_from_mercurial_forest
 {
     rm -f $FLIST
     if [ -z "$Nflag" ]; then
-        print " File list from hg foutgoing $PWS ..."
+        print " File list from hg toutgoing $PWS ..."
         outgoing_from_mercurial_forest
         HG_LIST_FROM_COMMIT=1
     fi
     if [ ! -f $FLIST ]; then
         # hg commit hasn't been run see what is lying around
         print "\n No outgoing, perhaps you haven't commited."
-        print " File list from hg fstatus -mard ...\c"
+        print " File list from hg tstatus -mard ...\c"
         FSTAT_OPT=
         fstatus
         HG_LIST_FROM_COMMIT=
@@ -1299,7 +1301,7 @@ function flist_from_mercurial_forest
 }
 
 #
-# Used when dealing with the result of 'hg foutgoing'
+# Used when dealing with the result of 'hg toutgoing'
 # When now go down the tree and generate the change list
 #
 function treestatus
@@ -1358,23 +1360,31 @@ function treestatus
 
 function fstatus
 {
+    hgroot=`hg root | $FILTER`
+
     #
-    # forest extension is still being changed. For instance the output
-    # of fstatus used to no prepend the tree path to filenames, but
-    # this has changed recently. AWK code below does try to handle both
-    # cases
+    # forest extension used to change. For instance the output
+    # of fstatus used to not prepend the tree path to filenames, but
+    # this was then changed. Although we're now using the tree extension
+    # which doesn't prepend the tree path to files, we're keeping below
+    # the AWK code which still tries to handle both cases
     #
-    hg fstatus -mdn $FSTAT_OPT 2>/dev/null | $FILTER | $AWK '
-	/^\[.*\]$/	{tree=substr($1,2,length($1)-2); next}
+    hg tstatus -mdn $FSTAT_OPT 2>/dev/null | $FILTER | $AWK -v "hgroot=$hgroot" '
+	/^\[.*\]:$/	{tree=substr($1,length(hgroot)+3); tree=substr(tree,0,length(tree)-2); next}
 	$1 != ""	{n=index($1,tree);
 			 if (n == 0)
 				{ printf("%s/%s\n",tree,$1)}
 			 else
 				{ printf("%s\n",$1)}}' >> $FLIST
 
-    #
-    # There is a bug in the output of fstatus -aC on recent versions: it
-    # inserts a space between the name of the tree and the filename of the
+    # 
+    # The code below deals with added files and renames.
+    # When a file is renamed, hg status -aC will print two lines:
+    #  - the first line contains the new name
+    #  - the second line contains the old name
+    # 
+    # There was a bug in the output of fstatus -aC on later versions: it
+    # inserted a space between the name of the tree and the filename of the
     # old file. e.g.:
     #
     # $ hg fstatus -aC
@@ -1386,9 +1396,25 @@ function fstatus
     #
     # [MyWS2]
     #
+    # Although we now use tstatus instead of fstatus we still keep below
+    # the code that used to deal with that bug.
+    #
+    # For reference 'hg tstatus -aC' produces something like:
+    #
+    # [/.../testrepo]:
+    # A src/H
+    #   H
+    # A src/open/I
+    #   src/open/F
+    #
+    # [/.../testrepo/src/subrepo]:
+    # A dir/J
+    # A dir/K
+    #   C
+    #
 
-    hg fstatus -aC $FSTAT_OPT 2>/dev/null | $FILTER | $AWK '
-	/^\[.*\]$/	{tree=substr($1,2,length($1)-2); next}
+    hg tstatus -aC $FSTAT_OPT 2>/dev/null | $FILTER | $AWK -v "hgroot=$hgroot" '
+	/^\[.*\]:$/	{tree=substr($1,length(hgroot)+3); tree=substr(tree,0,length(tree)-2); next}
 	/^A .*/		{n=index($2,tree);
 			 if (n == 0)
 				{ printf("A %s/%s\n",tree,$2)}
@@ -1427,8 +1453,8 @@ function fstatus
 	    fi
 	done
     done
-    hg fstatus -rn $FSTAT_OPT 2>/dev/null | $FILTER | $AWK '
-	/^\[.*\]$/	{tree=substr($1,2,length($1)-2); next}
+    hg tstatus -rn $FSTAT_OPT 2>/dev/null | $FILTER | $AWK -v "hgroot=$hgroot" '
+	/^\[.*\]:$/	{tree=substr($1,length(hgroot)+3); tree=substr(tree,0,length(tree)-2); next}
 	$1 != ""	{n=index($1,tree);
 			 if (n == 0)
 				{ printf("%s/%s\n",tree,$1)}
@@ -1927,7 +1953,15 @@ if [[ $SCM_MODE == "mercurial" ]]; then
 	    fi
         fi
     fi
+    # Check that 'trees' are enabled if forestflag is set
     #
+    if [[ -n $forestflag ]]; then
+        if ! hg help trees >/dev/null ; then
+            trees_url="http://openjdk.java.net/projects/code-tools/trees/"
+            print -u2 "the -f flag requires the trees extension; please see $trees_url"
+            exit 2
+        fi
+    fi
     # OUTPWS is the parent repository to use when using 'hg outgoing'
     #
     if [[ -z $Nflag ]]; then
