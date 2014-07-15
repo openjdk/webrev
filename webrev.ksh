@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=25.4-hg+openjdk.java.net
+WEBREV_UPDATED=25.5-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1372,7 +1372,7 @@ function fstatus
     hg tstatus -mdn $FSTAT_OPT 2>/dev/null | $FILTER | $AWK -v "hgroot=$hgroot" '
 	/^\[.*\]:$/	{tree=substr($1,length(hgroot)+3); tree=substr(tree,0,length(tree)-2); next}
 	$1 != ""	{n=index($1,tree);
-			 if (n == 0)
+			 if (n != 1)
 				{ printf("%s/%s\n",tree,$1)}
 			 else
 				{ printf("%s\n",$1)}}' >> $FLIST
@@ -1416,13 +1416,13 @@ function fstatus
     hg tstatus -aC $FSTAT_OPT 2>/dev/null | $FILTER | $AWK -v "hgroot=$hgroot" '
 	/^\[.*\]:$/	{tree=substr($1,length(hgroot)+3); tree=substr(tree,0,length(tree)-2); next}
 	/^A .*/		{n=index($2,tree);
-			 if (n == 0)
+			 if (n != 1)
 				{ printf("A %s/%s\n",tree,$2)}
 			 else
 				{ printf("A %s\n",$2)};
 			 next}
 	/^ /		{n=index($1,tree);
-			 if (n == 0)
+			 if (n != 1)
 				{ printf("%s/%s\n",tree,$1)}
 			 else
 				{ if (NF == 2)
@@ -1456,7 +1456,7 @@ function fstatus
     hg tstatus -rn $FSTAT_OPT 2>/dev/null | $FILTER | $AWK -v "hgroot=$hgroot" '
 	/^\[.*\]:$/	{tree=substr($1,length(hgroot)+3); tree=substr(tree,0,length(tree)-2); next}
 	$1 != ""	{n=index($1,tree);
-			 if (n == 0)
+			 if (n != 1)
 				{ printf("%s/%s\n",tree,$1)}
 			 else
 				{ printf("%s\n",$1)}}' | while read RFILE; do
@@ -1763,7 +1763,7 @@ Options:
 Mercurial only options:
 	-r rev: Compare against a specified revision
 	-N: Skip 'hg outgoing', use only 'hg status'
-	-f: Use the forest extension
+	-f: (forest) Use the trees extension over loosely-coupled nested repositories
 
 Arguments:
 	<file>: Optional file containing list of files to include in webrev
@@ -1956,10 +1956,17 @@ if [[ $SCM_MODE == "mercurial" ]]; then
     # Check that 'trees' are enabled if forestflag is set
     #
     if [[ -n $forestflag ]]; then
-        if ! hg help trees >/dev/null ; then
+        hastrees=`hg showconfig extensions | grep ^extensions.trees | wc -l`
+        if [[ $hastrees -eq 0 ]]; then
             trees_url="http://openjdk.java.net/projects/code-tools/trees/"
             print -u2 "the -f flag requires the trees extension; please see $trees_url"
             exit 2
+        else 
+            hassubtrees=`hg tlist | wc -l`
+            if [[ $hassubtrees -lt 2 ]]; then
+               print -u2 "WARNING: -f flag provided but no subtree configured."
+               print -u2 "         consider running 'hg tconfig --set --walk --depth'"
+            fi
         fi
     fi
     # OUTPWS is the parent repository to use when using 'hg outgoing'
