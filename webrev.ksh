@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=25.5-hg+openjdk.java.net
+WEBREV_UPDATED=25.6-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -212,6 +212,30 @@ strip_unchanged()
 	' $1
 }
 
+prev_index_next_html()
+{
+	RELROOT=$1
+	PREVIOUS_FILE=$2
+	NEXT_FILE=$3
+	EXTENSION=$4
+
+	if [[ $PREVIOUS_FILE = "no_prev" ]]
+	then
+	    PREV_LINK="&lt prev"
+	else
+	    PREV_LINK="<a href='${RELROOT}${PREVIOUS_FILE}.${EXTENSION}.html' target='_top'>&lt prev</a>"
+	fi
+
+	if [[ $NEXT_FILE = "no_next" ]]
+	then
+	    NEXT_LINK="next &gt"
+	else
+	    NEXT_LINK="<a href='${RELROOT}${NEXT_FILE}.${EXTENSION}.html' target='_top'>next &gt</a>"
+	fi
+
+	print "<center>${PREV_LINK} <a href='${RELROOT}index.html' target='_top'>index</a> ${NEXT_LINK}</center>"
+}
+
 #
 # sdiff_to_html
 #
@@ -280,6 +304,9 @@ sdiff_to_html()
 	TNAME=$3
 	TPATH=$4
 	COMMENT=$5
+	RELROOT=$6
+	PREVIOUS_FILE=$7
+	NEXT_FILE=$8
 
 	#
 	#  Now we have the diffs, generate the HTML for the old file.
@@ -458,6 +485,7 @@ sdiff_to_html()
 	print "$HTML<head>$STDHEAD"
 	print "<title>$WNAME Sdiff $TPATH </title>"
 	print "</head><body id=\"SUNWwebrev\">"
+	prev_index_next_html "$RELROOT" "$PREVIOUS_FILE" "$NEXT_FILE" "sdiff"
 	print "<h2>$TPATH/$TNAME</h2>"
         print "<a class=\"print\" href=\"javascript:print()\">Print this page</a>"
 	print "<pre>$COMMENT</pre>\n"
@@ -472,10 +500,11 @@ sdiff_to_html()
 
 	print "</pre></td>"
 	print "</tr></table>"
+	prev_index_next_html "$RELROOT" "$PREVIOUS_FILE" "$NEXT_FILE" "sdiff"
 	print "</body></html>"
 
 	framed_sdiff $TNAME $TPATH /tmp/$$.file1.html /tmp/$$.file2.html \
-	    "$COMMENT"
+	    "$COMMENT" "$RELROOT" "$PREVIOUS_FILE" "$NEXT_FILE"
 }
 
 
@@ -500,6 +529,9 @@ function framed_sdiff
 	typeset rhsfile=$4
 	typeset comments=$5
 	typeset RTOP
+	typeset RELROOT=$6
+	typeset PREVIOUS_FILE=$7
+	typeset NEXT_FILE=$8
 
 	# Enable html files to access WDIR via a relative path.
 	RTOP=$(relative_dir $TPATH $WDIR)
@@ -525,17 +557,26 @@ function framed_sdiff
 	print $close >> $WDIR/$DIR/$TNAME.lhs.html
 	print $close >> $WDIR/$DIR/$TNAME.rhs.html
 
+	typeset PREV_NEXT_FILE_NAME=$WDIR/$DIR/$TNAME.frames.prev_next.html
+	print "<body bgcolor='#eeeeee'><html>" > $PREV_NEXT_FILE_NAME
+	prev_index_next_html "$RELROOT" "$PREVIOUS_FILE" "$NEXT_FILE" "frames" >> $PREV_NEXT_FILE_NAME
+	print "</html></body>" >> $PREV_NEXT_FILE_NAME
+
 	print "$FRAMEHTML<head>$STDHEAD" > $WDIR/$DIR/$TNAME.frames.html
 	print "<title>$WNAME Framed-Sdiff " \
 	    "$TPATH/$TNAME</title> </head>" >> $WDIR/$DIR/$TNAME.frames.html
 	cat >> $WDIR/$DIR/$TNAME.frames.html <<-EOF
-	  <frameset rows="*,60">
+	  <frameset rows="*,90">
 	    <frameset cols="50%,50%">
 	      <frame src="$TNAME.lhs.html" scrolling="auto" name="lhs" />
 	      <frame src="$TNAME.rhs.html" scrolling="auto" name="rhs" />
 	    </frameset>
-	  <frame src="$RTOP/ancnav.html" scrolling="no" marginwidth="0"
-	   marginheight="0" name="nav" />
+            <frameset rows="60, 30">
+              <frame src="$RTOP/ancnav.html" scrolling="no" marginwidth="0"
+              marginheight="0" name="nav" />
+              <frame src="$TNAME.frames.prev_next.html" scrolling="no" marginwidth="0"
+              marginheight="0" name="prev_next" />
+            </frameset>
 	  <noframes>
             <body id="SUNWwebrev">
 	      Alas 'frames' webrev requires that your browser supports frames
@@ -977,8 +1018,6 @@ EOF
 EOF
 }
 
-
-
 #
 # diff_to_html <filename> <filepath> { U | C } <comment>
 #
@@ -991,17 +1030,26 @@ diff_to_html()
 	TPATH=$2
 	DIFFTYPE=$3
 	COMMENT=$4
+	RELROOT=$5
+	PREVIOUS_FILE=$6
+	NEXT_FILE=$7
 
 	print "$HTML<head>$STDHEAD"
 	print "<title>$WNAME ${DIFFTYPE}diff $TPATH</title>"
 
+	EXTENSION="cdiff"
 	if [[ $DIFFTYPE == "U" ]]; then
 		print "$UDIFFCSS"
+		EXTENSION="udiff"
 	fi
 
 	cat <<-EOF
 	</head>
 	<body id="SUNWwebrev">
+EOF
+	prev_index_next_html "$RELROOT" "$PREVIOUS_FILE" "$NEXT_FILE" "${EXTENSION}"
+
+	cat <<-EOF
 	<h2>$TPATH</h2>
         <a class="print" href="javascript:print()">Print this page</a>
 	<pre>$COMMENT</pre>
@@ -1029,7 +1077,9 @@ EOF
 			{printf "%s\n", $0; next}
 	'
 
-	print "</pre></body></html>\n"
+	print "</pre>"
+	prev_index_next_html "$RELROOT" "$PREVIOUS_FILE" "$NEXT_FILE" "${EXTENSION}"
+	print "</body></html>\n"
 }
 
 
@@ -2206,9 +2256,30 @@ fi
 #
 # First pass through the files: generate the per-file webrev HTML-files.
 #
+
+# build array for next links
+i=0
+while read LINE
+do
+	NEXT_FILES[$i]=$LINE
+	i=$(($i + 1))
+done < $FLIST
+
+PREVIOUS_FILE="no_prev"
+i=1;
 while read LINE
 do
 	set - $LINE
+	if [[ i -lt ${#NEXT_FILES[*]} ]]
+	then
+	    NEXT_FILE=${NEXT_FILES[$i]}
+	    i=$(($i + 1))
+	else
+	    NEXT_FILE="no_next"
+	fi
+
+        RELROOT=`echo $LINE | sed -e 's:[^/][^/]*/:../:g' -e 's:/[^/]*$:/:' -e 's:^[^/]*$:./:'`
+
 	P=$1
 
         if [[ $1 == "Revision:" ]]; then
@@ -2327,12 +2398,12 @@ do
 		if [[ -f $ofile && -f $nfile && -z $mv_but_nodiff ]]; then
 
 		    ${CDIFFCMD:-diff -bt -C 5} $ofile.lst $nfile.lst > $WDIR/$DIR/$F.cdiff
-		    diff_to_html $F $DIR/$F "C" "$COMM" < $WDIR/$DIR/$F.cdiff \
+		    diff_to_html $F $DIR/$F "C" "$COMM" "$RELROOT" "$PREVIOUS_FILE" "$NEXT_FILE" < $WDIR/$DIR/$F.cdiff \
 			> $WDIR/$DIR/$F.cdiff.html
 		    print " cdiffs\c"
 
 		    ${UDIFFCMD:-diff -bt -U 5} $ofile.lst $nfile.lst > $WDIR/$DIR/$F.udiff
-		    diff_to_html $F $DIR/$F "U" "$COMM" < $WDIR/$DIR/$F.udiff \
+		    diff_to_html $F $DIR/$F "U" "$COMM" "$RELROOT" "$PREVIOUS_FILE" "$NEXT_FILE" < $WDIR/$DIR/$F.udiff \
 			> $WDIR/$DIR/$F.udiff.html
 
 		    print " udiffs\c"
@@ -2348,7 +2419,7 @@ do
 			fi
 		    fi
 
-		    sdiff_to_html $ofile $nfile $F $DIR "$COMM" \
+		    sdiff_to_html $ofile $nfile $F $DIR "$COMM" "$RELROOT" "$PREVIOUS_FILE" "$NEXT_FILE" \
 			> $WDIR/$DIR/$F.sdiff.html
 		    print " sdiffs\c"
 
@@ -2427,12 +2498,12 @@ do
 	    if [[ -f $ofile && -f $nfile && -z $mv_but_nodiff ]]; then
 
 		${CDIFFCMD:-diff -bt -C 5} $ofile $nfile > $WDIR/$DIR/$F.cdiff
-		diff_to_html $F $DIR/$F "C" "$COMM" < $WDIR/$DIR/$F.cdiff \
+		diff_to_html $F $DIR/$F "C" "$COMM" "$RELROOT" "$PREVIOUS_FILE" "$NEXT_FILE" < $WDIR/$DIR/$F.cdiff \
 		    > $WDIR/$DIR/$F.cdiff.html
 		print " cdiffs\c"
 
 		${UDIFFCMD:-diff -bt -U 5} $ofile $nfile > $WDIR/$DIR/$F.udiff
-		diff_to_html $F $DIR/$F "U" "$COMM" < $WDIR/$DIR/$F.udiff \
+		diff_to_html $F $DIR/$F "U" "$COMM" "$RELROOT" "$PREVIOUS_FILE" "$NEXT_FILE" < $WDIR/$DIR/$F.udiff \
 		    > $WDIR/$DIR/$F.udiff.html
 
 		print " udiffs\c"
@@ -2448,7 +2519,7 @@ do
 		    fi
 		fi
 
-		sdiff_to_html $ofile $nfile $F $DIR "$COMM" \
+		sdiff_to_html $ofile $nfile $F $DIR "$COMM" "$RELROOT" "$PREVIOUS_FILE" "$NEXT_FILE" \
 		    > $WDIR/$DIR/$F.sdiff.html
 		print " sdiffs\c"
 
@@ -2513,6 +2584,7 @@ do
 	fi
 
 	print
+	PREVIOUS_FILE=$LINE
 done < $FLIST
 
 # Create the new style mercurial patch here using hg export -r [all-revs] -g -o $CHANGESETPATH
@@ -2738,6 +2810,15 @@ do
 		fi
 
 		print " ------"
+
+		RELROOT=`echo $LINE | sed -e 's:[^/][^/]*/:../:g' -e 's:/[^/]*$:/:' -e 's:^[^/]*$:./:'`
+                INDEXURL="${RELROOT}index.html"
+		REDIRECT="<html><head><meta http-equiv='refresh' content='0;URL=${INDEXURL}'/></head><body>No more diffs. Back to <a href='${INDEXURL}'> index.</a></body></html>"
+		echo $REDIRECT >  $F.cdiff.html
+		echo $REDIRECT >  $F.udiff.html
+		echo $REDIRECT >  $F.sdiff.html
+		echo $REDIRECT >  $F.wdiff.html
+		echo $REDIRECT >  $F.frames.html
 	fi
 
 	# If there's an old file, make the link
