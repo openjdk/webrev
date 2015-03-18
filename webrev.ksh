@@ -19,7 +19,7 @@
 #
 # CDDL HEADER END
 #
-# Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
 # Use is subject to license terms.
 #
 # This script takes a file list and a workspace and builds a set of html files
@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=25.6-hg+openjdk.java.net
+WEBREV_UPDATED=25.7-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1147,11 +1147,13 @@ comments_from_mercurial()
 #
 getcomments()
 {
+    if [[ -z "$Cflag" ]]; then
 	typeset fmt=$1
 	typeset p=$2
 	typeset pp=$3
 
 	comments_from_mercurial $fmt $pp $p
+    fi
 }
 
 #
@@ -1809,6 +1811,7 @@ Options:
 	-p <compare-against>: Use specified parent wkspc or basis for comparison
         -u <username>: Use that username instead of 'guessing' one.
 	-m: Forces the use of Mercurial
+	-C: Don't show comments
 
 Mercurial only options:
 	-r rev: Compare against a specified revision
@@ -1887,8 +1890,9 @@ uflag=
 Oflag=
 rflag=
 Nflag=
+Cflag=
 forestflag=
-while getopts "c:i:o:p:r:u:mONvfb" opt
+while getopts "c:i:o:p:r:u:mONvfbC" opt
 do
 	case $opt in
         b)      bflag=1;;
@@ -1916,6 +1920,8 @@ do
 	O)	Oflag=1;; # ignored (bugs are now all visible at bugs.openjdk.java.net)
 
 	N)	Nflag=1;;
+
+	C)	Cflag=1;;
 
 	f)	forestflag=1;;
 
