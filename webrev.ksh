@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=25.7-hg+openjdk.java.net
+WEBREV_UPDATED=25.8-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -299,7 +299,7 @@ prev_index_next_html()
 #
 sdiff_to_html()
 {
-	diff -b $1 $2 > /tmp/$$.diffs
+	diff $DIFFOPTS $1 $2 > /tmp/$$.diffs
 
 	TNAME=$3
 	TPATH=$4
@@ -2403,12 +2403,12 @@ do
 
 		if [[ -f $ofile && -f $nfile && -z $mv_but_nodiff ]]; then
 
-		    ${CDIFFCMD:-diff -bt -C 5} $ofile.lst $nfile.lst > $WDIR/$DIR/$F.cdiff
+		    ${CDIFFCMD:-diff $DIFFOPTS -C 5} $ofile.lst $nfile.lst > $WDIR/$DIR/$F.cdiff
 		    diff_to_html $F $DIR/$F "C" "$COMM" "$RELROOT" "$PREVIOUS_FILE" "$NEXT_FILE" < $WDIR/$DIR/$F.cdiff \
 			> $WDIR/$DIR/$F.cdiff.html
 		    print " cdiffs\c"
 
-		    ${UDIFFCMD:-diff -bt -U 5} $ofile.lst $nfile.lst > $WDIR/$DIR/$F.udiff
+		    ${UDIFFCMD:-diff $DIFFOPTS -U 5} $ofile.lst $nfile.lst > $WDIR/$DIR/$F.udiff
 		    diff_to_html $F $DIR/$F "U" "$COMM" "$RELROOT" "$PREVIOUS_FILE" "$NEXT_FILE" < $WDIR/$DIR/$F.udiff \
 			> $WDIR/$DIR/$F.udiff.html
 
@@ -2503,12 +2503,12 @@ do
 
 	    if [[ -f $ofile && -f $nfile && -z $mv_but_nodiff ]]; then
 
-		${CDIFFCMD:-diff -bt -C 5} $ofile $nfile > $WDIR/$DIR/$F.cdiff
+		${CDIFFCMD:-diff $DIFFOPTS -C 5} $ofile $nfile > $WDIR/$DIR/$F.cdiff
 		diff_to_html $F $DIR/$F "C" "$COMM" "$RELROOT" "$PREVIOUS_FILE" "$NEXT_FILE" < $WDIR/$DIR/$F.cdiff \
 		    > $WDIR/$DIR/$F.cdiff.html
 		print " cdiffs\c"
 
-		${UDIFFCMD:-diff -bt -U 5} $ofile $nfile > $WDIR/$DIR/$F.udiff
+		${UDIFFCMD:-diff $DIFFOPTS -U 5} $ofile $nfile > $WDIR/$DIR/$F.udiff
 		diff_to_html $F $DIR/$F "U" "$COMM" "$RELROOT" "$PREVIOUS_FILE" "$NEXT_FILE" < $WDIR/$DIR/$F.udiff \
 		    > $WDIR/$DIR/$F.udiff.html
 
