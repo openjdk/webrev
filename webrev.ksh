@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=25.9-hg+openjdk.java.net
+WEBREV_UPDATED=25.10-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -2120,7 +2120,6 @@ if [[ $SCM_MODE == "mercurial" ]]; then
             #
             FIRST_CREV=`hg log --rev $PARENT_REV --template '{rev}'`
             FIRST_CREV=`expr $FIRST_CREV + 1`
-            HG_LIST_FROM_COMMIT=1
         fi
     fi
     #Let's check if a merge is needed, if so, issue a warning
