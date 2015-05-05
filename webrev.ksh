@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=25.8-hg+openjdk.java.net
+WEBREV_UPDATED=25.9-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1824,7 +1824,10 @@ Arguments:
 
 Environment:
 	WDIR: Control the output directory.
-	WEBREV_BUGURL: Control the URL prefix for bugids.
+	WEBREV_BUGURL: Controls the URL prefix for bugids.
+                       Defaults to: $BUGURL
+	WEBREV_IDPREFIX: Controls the prefix for bugids.
+                         Defaults to: $IDPREFIX
 
 "
 
@@ -1855,6 +1858,15 @@ set +o noclobber
 [[ -z $ZIP ]] && ZIP=`look_for_prog zip`
 [[ -z $GETENT ]] && GETENT=`look_for_prog getent`
 [[ -z $WGET ]] && WGET=`look_for_prog wget`
+
+#
+#    Bug IDs will be replaced by a URL.  Order of precedence
+#    is: default location, $WEBREV_BUGURL
+#
+BUGURL='https://bugs.openjdk.java.net/browse/'
+[[ -n $WEBREV_BUGURL ]] && BUGURL="$WEBREV_BUGURL"
+IDPREFIX='JDK-'
+[[ -n $WEBREV_IDPREFIX ]] && IDPREFIX="$WEBREV_IDPREFIX"
 
 if uname | grep CYGWIN >/dev/null
 then
@@ -2219,14 +2231,6 @@ print "      Output to: $WDIR"
 # Save the file list in the webrev dir
 #
 [[ ! $FLIST -ef $WDIR/file.list ]] && cp $FLIST $WDIR/file.list
-
-#
-#    Bug IDs will be replaced by a URL.  Order of precedence
-#    is: default location, $WEBREV_BUGURL
-#
-BUGURL='https://bugs.openjdk.java.net/browse/'
-[[ -n $WEBREV_BUGURL ]] && BUGURL="$WEBREV_BUGURL"
-IDPREFIX='JDK-'
 
 
 rm -f $WDIR/$WNAME.patch
@@ -2737,7 +2741,7 @@ if [[ -n $CRID ]]; then
     for id in $CRID
     do
         #add "JDK-" to raw bug id for openjdk.java.net links.
-        id=`echo ${id} | sed 's/^\([0-9]\{5,\}\)$/JDK-\1/'`
+        id=`echo ${id} | sed "s/^\([0-9]\{5,\}\)$/$IDPREFIX\1/"`
 
         print "<tr><th>Bug id:</th><td>"
         url="${BUGURL}${id}"
