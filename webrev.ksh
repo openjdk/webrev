@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=25.10-hg+openjdk.java.net
+WEBREV_UPDATED=25.11-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1741,7 +1741,7 @@ function build_old_new_mercurial
 	if [ -z "$rename" ]; then
 	    if [ -n "$rflag" ]; then
 		parentrev=$PARENT_REV
-	    elif [ "$HG_LIST_FROM_COMMIT" -eq 1 ]; then
+	    elif [[ "$HG_LIST_FROM_COMMIT" -eq 1 ]]; then
                 parentrev=$OUTREV
 	    else
                 if [[ -n $HG_BRANCH ]]; then
@@ -2279,7 +2279,7 @@ i=1;
 while read LINE
 do
 	set - $LINE
-	if [[ i -lt ${#NEXT_FILES[*]} ]]
+	if [[ $i -lt ${#NEXT_FILES[*]} ]]
 	then
 	    NEXT_FILE=${NEXT_FILES[$i]}
 	    i=$(($i + 1))
