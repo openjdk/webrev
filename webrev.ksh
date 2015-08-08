@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=25.11-hg+openjdk.java.net
+WEBREV_UPDATED=25.12-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1308,7 +1308,7 @@ function outgoing_from_mercurial_forest
         /^comparing/    {next}
         /^no changes/   {next}
         /^searching/    {next}
-	/^\[.*\]:$/	{tree=substr($1,length(hgroot)+3); tree=substr(tree,0,length(tree)-2);
+	/^\[.*\]:$/	{tree=substr($1,length(hgroot)+3); tree=substr(tree,1,length(tree)-2);
                          if (tree == "") { tree="."; }
                          trees[ntree++] = tree;
                          revs[tree]=-1;
@@ -1422,19 +1422,19 @@ function fstatus
     # the AWK code which still tries to handle both cases
     #
     hg tstatus -mdn $FSTAT_OPT 2>/dev/null | $FILTER | $AWK -v "hgroot=$hgroot" '
-	/^\[.*\]:$/	{tree=substr($1,length(hgroot)+3); tree=substr(tree,0,length(tree)-2); next}
+	/^\[.*\]:$/	{tree=substr($1,length(hgroot)+3); tree=substr(tree,1,length(tree)-2); next}
 	$1 != ""	{n=index($1,tree);
 			 if (n != 1)
 				{ printf("%s/%s\n",tree,$1)}
 			 else
 				{ printf("%s\n",$1)}}' >> $FLIST
 
-    # 
+    #
     # The code below deals with added files and renames.
     # When a file is renamed, hg status -aC will print two lines:
     #  - the first line contains the new name
     #  - the second line contains the old name
-    # 
+    #
     # There was a bug in the output of fstatus -aC on later versions: it
     # inserted a space between the name of the tree and the filename of the
     # old file. e.g.:
@@ -1466,7 +1466,7 @@ function fstatus
     #
 
     hg tstatus -aC $FSTAT_OPT 2>/dev/null | $FILTER | $AWK -v "hgroot=$hgroot" '
-	/^\[.*\]:$/	{tree=substr($1,length(hgroot)+3); tree=substr(tree,0,length(tree)-2); next}
+	/^\[.*\]:$/	{tree=substr($1,length(hgroot)+3); tree=substr(tree,1,length(tree)-2); next}
 	/^A .*/		{n=index($2,tree);
 			 if (n != 1)
 				{ printf("A %s/%s\n",tree,$2)}
@@ -1506,7 +1506,7 @@ function fstatus
 	done
     done
     hg tstatus -rn $FSTAT_OPT 2>/dev/null | $FILTER | $AWK -v "hgroot=$hgroot" '
-	/^\[.*\]:$/	{tree=substr($1,length(hgroot)+3); tree=substr(tree,0,length(tree)-2); next}
+	/^\[.*\]:$/	{tree=substr($1,length(hgroot)+3); tree=substr(tree,1,length(tree)-2); next}
 	$1 != ""	{n=index($1,tree);
 			 if (n != 1)
 				{ printf("%s/%s\n",tree,$1)}
@@ -2029,7 +2029,7 @@ if [[ $SCM_MODE == "mercurial" ]]; then
             trees_url="http://openjdk.java.net/projects/code-tools/trees/"
             print -u2 "the -f flag requires the trees extension; please see $trees_url"
             exit 2
-        else 
+        else
             hassubtrees=`hg tlist | wc -l`
             if [[ $hassubtrees -lt 2 ]]; then
                print -u2 "WARNING: -f flag provided but no subtree configured."
