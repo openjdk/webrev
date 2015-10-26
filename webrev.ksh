@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=25.12-hg+openjdk.java.net
+WEBREV_UPDATED=25.14-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -2746,7 +2746,7 @@ if [[ -n $CRID ]]; then
         url="${BUGURL}${id}"
 
         if [[ -n $WGET ]]; then
-            msg=`$WGET --timeout=10 --tries=1 -q $url -O - | grep '<title>' | sed 's/<title>\[#\(.*\)\] \(.*\) - Java Bug System<\/title>/\1 : \2/' | html_dequote | html_quote`
+            msg=`$WGET --timeout=10 --tries=1 -q $url -O - | grep '<title>' | sed 's/<title>\[\(.*\)\] \(.*\) - Java Bug System<\/title>/\1 : \2/' | html_dequote | html_quote`
         fi
         if [[ -z $msg ]]; then
             msg="${id}"
