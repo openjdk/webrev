@@ -19,7 +19,7 @@
 #
 # CDDL HEADER END
 #
-# Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
 # Use is subject to license terms.
 #
 # This script takes a file list and a workspace and builds a set of html files
@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=25.14-hg+openjdk.java.net
+WEBREV_UPDATED=25.15-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1120,11 +1120,11 @@ comments_from_mercurial()
                         for rev in $ALL_CREV; do
                             rev_opt="$rev_opt --rev $rev"
                         done
-                        comm=`hg log $rev_opt --follow --template 'rev {rev} : {desc}\n' $logf`
+                        comm=`hg log $rev_opt --removed --template 'rev {rev} : {desc}\n' $logf`
                     elif [[ -n $FIRST_CREV ]]; then
-		        comm=`hg log --rev $FIRST_CREV:tip --follow --template 'rev {rev} : {desc}\n' $logf`
+		        comm=`hg log --rev $FIRST_CREV:tip --removed --template 'rev {rev} : {desc}\n' $logf`
                     else
-		        comm=`hg log -l1 --follow --template 'rev {rev} : {desc}\n' $logf`
+		        comm=`hg log -l1 --removed --template 'rev {rev} : {desc}\n' $logf`
                     fi
 	        else
 	            comm=""
