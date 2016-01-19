@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=25.15-hg+openjdk.java.net
+WEBREV_UPDATED=25.16-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -2266,10 +2266,16 @@ fi
 # First pass through the files: generate the per-file webrev HTML-files.
 #
 
-# build array for next links
+# build array for next links, skipping Revision so NEXT_FILE is correct
 i=0
 while read LINE
 do
+        set - $LINE
+
+        if [[ $1 == "Revision:" ]]; then
+            continue
+        fi
+
 	NEXT_FILES[$i]=$LINE
 	i=$(($i + 1))
 done < $FLIST
@@ -2279,6 +2285,17 @@ i=1;
 while read LINE
 do
 	set - $LINE
+
+        if [[ $1 == "Revision:" ]]; then
+            OUTREV=$2
+            continue
+        fi
+
+        # Strip off leading ./ directory and replacing remaining directories with ../
+        RELROOT=`echo $LINE | sed -e 's:^\./::' -e 's:[^/][^/]*/:../:g' -e 's:/[^/]*$:/:' -e 's:^[^/]*$:./:'`
+
+	P=$1
+
 	if [[ $i -lt ${#NEXT_FILES[*]} ]]
 	then
 	    NEXT_FILE=${NEXT_FILES[$i]}
@@ -2287,14 +2304,6 @@ do
 	    NEXT_FILE="no_next"
 	fi
 
-        RELROOT=`echo $LINE | sed -e 's:[^/][^/]*/:../:g' -e 's:/[^/]*$:/:' -e 's:^[^/]*$:./:'`
-
-	P=$1
-
-        if [[ $1 == "Revision:" ]]; then
-            OUTREV=$2
-            continue
-        fi
 	#
 	# Normally, each line in the file list is just a pathname of a
 	# file that has been modified or created in the child.  A file
@@ -2820,7 +2829,8 @@ do
 
 		print " ------"
 
-		RELROOT=`echo $LINE | sed -e 's:[^/][^/]*/:../:g' -e 's:/[^/]*$:/:' -e 's:^[^/]*$:./:'`
+                # Strip off leading ./ directory and replacing remaining directories with ../
+		RELROOT=`echo $LINE | sed -e 's:^\./::' -e 's:[^/][^/]*/:../:g' -e 's:/[^/]*$:/:' -e 's:^[^/]*$:./:'`
                 INDEXURL="${RELROOT}index.html"
 		REDIRECT="<html><head><meta http-equiv='refresh' content='0;URL=${INDEXURL}'/></head><body>No more diffs. Back to <a href='${INDEXURL}'> index.</a></body></html>"
 		echo $REDIRECT >  $F.cdiff.html
