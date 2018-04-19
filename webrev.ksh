@@ -19,7 +19,7 @@
 #
 # CDDL HEADER END
 #
-# Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
 # Use is subject to license terms.
 #
 # This script takes a file list and a workspace and builds a set of html files
@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=25.16-hg+openjdk.java.net
+WEBREV_UPDATED=25.17-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1343,7 +1343,7 @@ function flist_from_mercurial_forest
     fi
     if [ ! -f $FLIST ]; then
         # hg commit hasn't been run see what is lying around
-        print "\n No outgoing, perhaps you haven't commited."
+        print "\n No outgoing, perhaps you haven't committed."
         print " File list from hg tstatus -mard ...\c"
         FSTAT_OPT=
         fstatus
@@ -1552,7 +1552,7 @@ function flist_from_mercurial
             STATUS_REV="--rev $OUTREV"
         else
             # hg commit hasn't been run see what is lying around
-            print "\n No outgoing, perhaps you haven't commited."
+            print "\n No outgoing, perhaps you haven't committed."
         fi
 	# First let's list all the modified or deleted files
 
@@ -2276,6 +2276,11 @@ do
             continue
         fi
 
+	# take first token, there might be more than one
+	# (happens when file is renamed or moved for example)
+	set -A LINE_FILES $LINE
+	LINE=${LINE_FILES[0]}
+
 	NEXT_FILES[$i]=$LINE
 	i=$(($i + 1))
 done < $FLIST
@@ -2290,6 +2295,11 @@ do
             OUTREV=$2
             continue
         fi
+
+        # take first token, there might be more than one
+        # (happens when file is renamed or moved for example)
+        set -A LINE_FILES $LINE
+        LINE=${LINE_FILES[0]}
 
         # Strip off leading ./ directory and replacing remaining directories with ../
         RELROOT=`echo $LINE | sed -e 's:^\./::' -e 's:[^/][^/]*/:../:g' -e 's:/[^/]*$:/:' -e 's:^[^/]*$:./:'`
