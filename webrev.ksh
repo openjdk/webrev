@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=25.17-hg+openjdk.java.net
+WEBREV_UPDATED=25.18-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1812,6 +1812,7 @@ Options:
         -u <username>: Use that username instead of 'guessing' one.
 	-m: Forces the use of Mercurial
 	-C: Don't show comments
+	-w: Don't display local paths to workspace or webrev installation
 
 Mercurial only options:
 	-r rev: Compare against a specified revision
@@ -1904,7 +1905,8 @@ rflag=
 Nflag=
 Cflag=
 forestflag=
-while getopts "c:i:o:p:r:u:mONvfbC" opt
+print_paths=1
+while getopts "c:i:o:p:r:u:mONvfbCw" opt
 do
 	case $opt in
         b)      bflag=1;;
@@ -1942,6 +1944,7 @@ do
 
 	v)	print "$0 version: $WEBREV_UPDATED";;
 
+	w)	print_paths="";;
 
 	?)	usage;;
 	esac
@@ -2706,7 +2709,9 @@ elif [[ -n "$username" ]]; then
 	print "<tr><th>Prepared by:</th><td>$username $date</td></tr>"
 fi
 
-print "<tr><th>Workspace:</th><td>$CWS</td></tr>"
+if [[ -n "$print_paths" ]]; then
+        print "<tr><th>Workspace:</th><td>$CWS</td></tr>"
+fi
 if [[ -n $parent_webrev ]]; then
         print "<tr><th>Compare against:</th><td>"
 	print "webrev at $parent_webrev"
@@ -2916,8 +2921,13 @@ print
 print
 print "<hr />"
 print "<p style=\"font-size: small\">"
-print "This code review page was prepared using <b>$0</b>"
-print "(vers $WEBREV_UPDATED)."
+print "This code review page was prepared using "
+if [[ -n "$print_paths" ]]; then
+  print "<b>$0</b>"
+else
+  print "webrev"
+fi
+print " (vers $WEBREV_UPDATED)."
 print "</body>"
 print "</html>"
 
