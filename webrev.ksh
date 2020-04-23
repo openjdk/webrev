@@ -1063,7 +1063,7 @@ EOF
 	/^\*\*\* old/	{ next }
 	/^\*\*\*\*/	{ next }
 	/^-------/	{ printf "<center><h1>%s</h1></center>\n", $0; next }
-	/^\@\@.*\@\@$/	{ printf "</pre><hr /><pre>\n";
+	/^@@.*@@$/	{ printf "</pre><hr /><pre>\n";
 			  printf "<span class=\"newmarker\">%s</span>\n", $0;
 			  next}
 
